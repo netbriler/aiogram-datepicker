@@ -1,19 +1,23 @@
 import calendar
-from datetime import datetime, timedelta, date
+from datetime import datetime, date
 
 from aiogram.types import CallbackQuery
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.callback_data import CallbackData
 
+from .settings import DatepickerSettings
+
 
 class Datepicker:
     datepicker_callback = CallbackData('datepicker', 'view', 'action', 'year', 'month', 'day')
-    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     ignore_callback = datepicker_callback.new('', 'ignore', -1, -1, -1)
 
-    def __init__(self, state, initial_date=datetime.now()):
+    def __init__(self, state, initial_date=datetime.now().date(), settings: DatepickerSettings = DatepickerSettings()):
         self.state = state
         self.initial_date = initial_date
+        self.settings = settings
+        self.months = settings.views['month']['months_labels']
+        self.weekdays = settings.views['day']['weekdays_labels']
 
     async def init(self):
         async with self.state.proxy() as proxy:
@@ -22,6 +26,31 @@ class Datepicker:
 
     def _get_callback(self, view: str, action: str, year: int, month: int, day: int) -> str:
         return self.datepicker_callback.new(view, action, year, month, day)
+
+    def _get_action(self, view: str, action: str, year: int, month: int, day: int) -> str:
+        if action in ['prev-year', 'next-year', 'prev-years', 'next-years', 'prev-month', 'select', 'next-month',
+                      'ignore']:
+            return InlineKeyboardButton(self.settings.labels[action],
+                                        callback_data=self._get_callback(view, action, year, month, day))
+
+        elif action == 'days-title' and view == 'day':
+            label = self.settings.labels['days-title'].replace('{month}', calendar.month_name[month]) \
+                .replace('{year}', str(year))
+
+            return InlineKeyboardButton(label,
+                                        callback_data=self._get_callback('month', 'set-view', year, month, day))
+
+        elif action == 'year' and view == 'month':
+            return InlineKeyboardButton(year, callback_data=self._get_callback('year', 'set-view', year, month, day))
+
+        elif action == 'select' and view == 'day':
+            return InlineKeyboardButton(self.settings.labels[action],
+                                        callback_data=self._get_callback(view, action, self.selected_date.year,
+                                                                         self.selected_date.month,
+                                                                         self.selected_date.day))
+        elif action == 'select' and view == 'month':
+            return InlineKeyboardButton(self.settings.labels[action],
+                                        callback_data=self._get_callback(view, action, year, month, day))
 
     async def select_date(self, _date: date):
         self.selected_date = _date
@@ -38,16 +67,15 @@ class Datepicker:
         year, month, day = _date.year, _date.month, _date.day
 
         markup = InlineKeyboardMarkup(row_width=7)
-        markup.add(
-            InlineKeyboardButton('<<', callback_data=self._get_callback('day', 'prev-year', year, month, day)),
-            InlineKeyboardButton(f'{calendar.month_name[month]} {year}',
-                                 callback_data=self._get_callback('month', 'set-view', year, month, day)),
-            InlineKeyboardButton('>>', callback_data=self._get_callback('day', 'next-year', year, month, day))
-        )
 
-        markup.row()
-        for week_day in ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']:
-            markup.insert(InlineKeyboardButton(week_day, callback_data=self.ignore_callback))
+        if len(self.settings.views['day']['header']):
+            markup.add(
+                *[self._get_action('day', action, year, month, day) for action in self.settings.views['day']['header']])
+
+        if self.settings.views['day']['show_weekdays']:
+            markup.row()
+            for week_day in self.weekdays:
+                markup.insert(InlineKeyboardButton(week_day, callback_data=self.ignore_callback))
 
         markup.row()
         month_calendar = calendar.monthcalendar(year, month)
@@ -67,14 +95,9 @@ class Datepicker:
                     label, callback_data=self._get_callback('day', 'set-day', year, month, week_day)
                 ))
 
-        markup.add(
-            InlineKeyboardButton('<', callback_data=self._get_callback('day', 'prev-month', year, month, day)),
-            InlineKeyboardButton(
-                'Select',
-                callback_data=self._get_callback('day', 'select', self.selected_date.year, self.selected_date.month,
-                                                 self.selected_date.day)),
-            InlineKeyboardButton('>', callback_data=self._get_callback('day', 'next-month', year, month, day))
-        )
+        if len(self.settings.views['day']['footer']):
+            markup.add(
+                *[self._get_action('day', action, year, month, day) for action in self.settings.views['day']['footer']])
 
         return markup
 
@@ -82,11 +105,10 @@ class Datepicker:
         year, month, day = _date.year, _date.month, _date.day
 
         markup = InlineKeyboardMarkup(row_width=4)
-        markup.add(
-            InlineKeyboardButton('<<', callback_data=self._get_callback('month', 'prev-year', year, month, day)),
-            InlineKeyboardButton(year, callback_data=self._get_callback('year', 'set-view', year, month, day)),
-            InlineKeyboardButton('>>', callback_data=self._get_callback('month', 'next-year', year, month, day))
-        )
+
+        if len(self.settings.views['month']['header']):
+            markup.add(
+                *[self._get_action('month', action, year, month, day) for action in self.settings.views['month']['header']])
 
         markup.row()
         for i, month_title in enumerate(self.months, start=1):
@@ -94,10 +116,9 @@ class Datepicker:
                 f'{month_title}*' if i == month else month_title,
                 callback_data=self._get_callback('month', 'set-month', year, i, day)
             ))
-
-        markup.add(
-            InlineKeyboardButton('Select', callback_data=self._get_callback('month', 'select', year, month, day))
-        )
+        if len(self.settings.views['month']['footer']):
+            markup.add(
+                *[self._get_action('month', action, year, month, day) for action in self.settings.views['month']['footer']])
 
         return markup
 
@@ -105,16 +126,21 @@ class Datepicker:
         year, month, day = _date.year, _date.month, _date.day
 
         markup = InlineKeyboardMarkup(row_width=3)
+
+        if len(self.settings.views['year']['header']):
+            markup.add(
+                *[self._get_action('year', action, year, month, day) for action in self.settings.views['year']['header']])
+
         for value in range(year - offset, year + offset + 1):
             markup.insert(InlineKeyboardButton(
                 f'{value}*' if self.selected_date.year == value else str(value),
                 callback_data=self._get_callback('year', 'set-year', value, month, day)
             ))
 
-        markup.add(
-            InlineKeyboardButton('<<', callback_data=self._get_callback('year', 'prev-years', year, month, day)),
-            InlineKeyboardButton('>>', callback_data=self._get_callback('year', 'next-years', year, month, day))
-        )
+        if len(self.settings.views['year']['footer']):
+            markup.add(
+                *[self._get_action('year', action, year, month, day) for action in
+                  self.settings.views['year']['footer']])
 
         return markup
 
