@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
   name='aiogram_datepicker',
   packages=['aiogram_datepicker'],
-  version='0.0.2',
+  version='0.0.1f',
   license='MIT',
   description='Telegram Bots datepicker & Aiogram datepicker',
   author='Briler',

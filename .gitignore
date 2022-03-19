@@ -7,6 +7,8 @@ env/
 __pycache__/
 *.pyc
 
+dev.py
+
 dist/
 MANIFEST
 MANIFEST.in

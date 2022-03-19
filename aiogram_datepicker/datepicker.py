@@ -17,18 +17,17 @@ class Datepicker:
 
     async def init(self):
         async with self.state.proxy() as proxy:
-            proxy.setdefault('datepicker_selected', self.initial_date.strftime('%Y-%-m-%-d'))
-            await self.select_date(datetime.strptime(proxy['datepicker_selected'], '%Y-%m-%d'))
-    
+            proxy.setdefault('datepicker_selected', self.initial_date.strftime('%Y-%m-%d'))
+            await self.select_date(datetime.strptime(proxy['datepicker_selected'], '%Y-%m-%d').date())
+
     def _get_callback(self, view: str, action: str, year: int, month: int, day: int) -> str:
         return self.datepicker_callback.new(view, action, year, month, day)
 
-    async def select_date(self, _date):
-        self.selected_date_string = _date.strftime('%Y-%-m-%-d')
+    async def select_date(self, _date: date):
         self.selected_date = _date
 
         async with self.state.proxy() as proxy:
-            proxy['datepicker_selected'] = self.selected_date_string
+            proxy['datepicker_selected'] = _date.strftime('%Y-%m-%d')
 
     async def start_calendar(self):
         await self.init()
@@ -36,14 +35,11 @@ class Datepicker:
         return self.get_days_view(self.initial_date)
 
     def get_days_view(self, _date: date = None) -> InlineKeyboardMarkup:
-        if _date is None:
-            _date = self.selected_date
         year, month, day = _date.year, _date.month, _date.day
-        for_destruct = (year, month, day)
 
         markup = InlineKeyboardMarkup(row_width=7)
         markup.add(
-            InlineKeyboardButton('<<', callback_data=self._get_callback('day', 'prev-year', *for_destruct)),
+            InlineKeyboardButton('<<', callback_data=self._get_callback('day', 'prev-year', year, month, day)),
             InlineKeyboardButton(f'{calendar.month_name[month]} {year}',
                                  callback_data=self._get_callback('month', 'set-view', year, month, day)),
             InlineKeyboardButton('>>', callback_data=self._get_callback('day', 'next-year', year, month, day))
@@ -61,9 +57,14 @@ class Datepicker:
                     markup.insert(InlineKeyboardButton(' ', callback_data=self.ignore_callback))
                     continue
 
+                label = f'{week_day}'
+                if date(year, month, week_day) == self.selected_date:
+                    label = f'{week_day} *'
+                elif date(year, month, week_day) == datetime.now().date():
+                    label = f'• {week_day} •'
+
                 markup.insert(InlineKeyboardButton(
-                    f'{week_day} *' if f'{year}-{month}-{week_day}' == self.selected_date_string else f'{week_day}',
-                    callback_data=self._get_callback('day', 'set-day', year, month, week_day)
+                    label, callback_data=self._get_callback('day', 'set-day', year, month, week_day)
                 ))
 
         markup.add(
@@ -78,8 +79,6 @@ class Datepicker:
         return markup
 
     def get_month_view(self, _date: date = None) -> InlineKeyboardMarkup:
-        if _date is None:
-            _date = self.selected_date
         year, month, day = _date.year, _date.month, _date.day
 
         markup = InlineKeyboardMarkup(row_width=4)
@@ -103,8 +102,6 @@ class Datepicker:
         return markup
 
     def get_year_view(self, _date: date = None, offset: int = 4) -> InlineKeyboardMarkup:
-        if _date is None:
-            _date = self.selected_date
         year, month, day = _date.year, _date.month, _date.day
 
         markup = InlineKeyboardMarkup(row_width=3)
@@ -130,19 +127,19 @@ class Datepicker:
             await query.message.edit_reply_markup(self.get_days_view(_date))
 
         elif action == 'prev-year':
-            prev_date = _date - timedelta(days=365)
+            prev_date = date(_date.year - 1, _date.month, _date.day)
             await query.message.edit_reply_markup(self.get_days_view(prev_date))
 
         elif action == 'next-year':
-            next_date = _date + timedelta(days=365)
+            next_date = date(_date.year + 1, _date.month, _date.day)
             await query.message.edit_reply_markup(self.get_days_view(next_date))
 
         elif action == 'prev-month':
-            prev_date = _date - timedelta(days=31)
+            prev_date = date(_date.year - int(_date.month == 1), 12 if _date.month == 1 else _date.month - 1, _date.day)
             await query.message.edit_reply_markup(self.get_days_view(prev_date))
 
         elif action == 'next-month':
-            next_date = _date + timedelta(days=31)
+            next_date = date(_date.year + int(_date.month == 12), ((_date.month % 12) + 1), _date.day)
             await query.message.edit_reply_markup(self.get_days_view(next_date))
 
         return False
@@ -155,11 +152,11 @@ class Datepicker:
             await query.message.edit_reply_markup(self.get_month_view(_date))
 
         elif action == 'prev-year':
-            prev_date = _date - timedelta(days=365)
+            prev_date = date(_date.year - 1, _date.month, _date.day)
             await query.message.edit_reply_markup(self.get_month_view(prev_date))
 
         elif action == 'next-year':
-            next_date = _date + timedelta(days=365)
+            next_date = date(_date.year + 1, _date.month, _date.day)
             await query.message.edit_reply_markup(self.get_month_view(next_date))
 
         elif action == 'select':
@@ -198,11 +195,14 @@ class Datepicker:
         view = data['view']
         _date = datetime(int(data['year']), int(data['month']), int(data['day'])).date()
 
-        if view == 'day':
-            return await self.day_actions(query, action, _date)
-        elif view == 'month':
-            return await self.month_actions(query, action, _date)
-        elif view == 'year':
-            return await self.year_actions(query, action, _date)
+        try:
+            if view == 'day':
+                return await self.day_actions(query, action, _date)
+            elif view == 'month':
+                return await self.month_actions(query, action, _date)
+            elif view == 'year':
+                return await self.year_actions(query, action, _date)
+        except:
+            await query.answer(cache_time=60)
 
         return False

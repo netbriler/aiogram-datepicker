@@ -45,8 +45,6 @@ async def _main(message: Message, state):
 
 @dp.callback_query_handler(Datepicker.datepicker_callback.filter(), state=Calendar.init)
 async def process_simple_calendar(callback_query: CallbackQuery, callback_data: dict, state):
-    print(callback_query.message.reply_markup.inline_keyboard)
-
     datepicker = Datepicker(state)
 
     date = await datepicker.process_selection(callback_query, callback_data)
