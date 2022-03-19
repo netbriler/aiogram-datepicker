@@ -3,13 +3,13 @@ from distutils.core import setup
 setup(
   name='aiogram_datepicker',
   packages=['aiogram_datepicker'],
-  version='0.0.1f',
+  version='0.0.1-beta',
   license='MIT',
   description='Telegram Bots datepicker & Aiogram datepicker',
   author='Briler',
   author_email='netbriler@gmail.com',
   url='https://github.com/netbriler/aiogram-datepicker',
-  download_url='https://github.com/netbriler/aiogram-datepicker/archive/refs/tags/0.0.1.tar.gz',
+  download_url='https://github.com/netbriler/aiogram-datepicker/archive/refs/tags/0.0.1-beta.tar.gz',
   keywords=['Aiogram', 'Telegram', 'Bots', 'Calendar', 'Datepicker'],
   install_requires=[
           'aiogram',
