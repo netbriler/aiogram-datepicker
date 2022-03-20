@@ -10,5 +10,7 @@ __pycache__/
 dev.py
 
 dist/
+aiogram_datepicker.egg-info/
+build/
 MANIFEST
 MANIFEST.in

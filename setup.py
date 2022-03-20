@@ -1,9 +1,12 @@
-from distutils.core import setup
+import setuptools
 
-setup(
+with open('README.md', 'r') as fh:
+    long_description = fh.read()
+
+setuptools.setup(
     name='aiogram_datepicker',
-    packages=['aiogram_datepicker'],
-    version='0.0.1-beta',
+    packages=setuptools.find_packages(),
+    version='0.0.3',
     license='MIT',
     description='Telegram Bots datepicker & Aiogram datepicker',
     author='Briler',
@@ -11,6 +14,8 @@ setup(
     url='https://github.com/netbriler/aiogram-datepicker',
     download_url='https://github.com/netbriler/aiogram-datepicker/archive/refs/tags/0.0.1-beta.tar.gz',
     keywords=['Aiogram', 'Telegram', 'Bots', 'Calendar', 'Datepicker'],
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     install_requires=[
         'aiogram',
         'pydantic'
@@ -27,4 +32,5 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
     ],
+    python_requires='>=3.9',
 )

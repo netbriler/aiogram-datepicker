@@ -3,7 +3,7 @@ from typing import Union, List, Dict
 
 from pydantic import BaseModel, validator
 
-_available_views = ('day', 'month', 'years')
+_available_views = ('day', 'month', 'year')
 
 _default_views = {
     'day': {
@@ -13,7 +13,7 @@ _default_views = {
 
         'show_weekdays': True,
 
-        'footer': ['prev-month', 'select', 'next-month']
+        'footer': ['prev-month', 'select', 'next-month'],
     },
     'month': {
         'months_labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
@@ -35,6 +35,7 @@ _default_labels = {
     'prev-years': '<<',
     'next-years': '>>',
     'days-title': '{month} {year}',
+    'year': '{year}',
     'selected-day': '{day} *',
     'selected-month': '{month} *',
     'present-day': '• {day} •',
@@ -62,7 +63,7 @@ class DatepickerSettings(BaseModel):
     def initial_views_validator(cls, v):
         views = _default_views
         if 'day' in v:
-            if len(v['day']['weekdays_labels']) != 12:
+            if len(v['day']['weekdays_labels']) != 7:
                 raise ValueError(f'should be 7 weekdays labels {v}')
 
             views['day'].update(v['day'])
@@ -94,6 +95,7 @@ class DatepickerSettings(BaseModel):
 
     @validator('labels')
     def labels_validator(cls, v):
+        labels = _default_labels
         labels.update(v)
 
         return labels
