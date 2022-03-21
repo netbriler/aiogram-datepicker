@@ -11,7 +11,10 @@ class Datepicker:
     datepicker_callback = CallbackData('datepicker', 'view', 'action', 'year', 'month', 'day')
     ignore_callback = datepicker_callback.new('', 'ignore', -1, -1, -1)
 
-    def __init__(self, settings: DatepickerSettings = DatepickerSettings()):
+    def __init__(self, settings: DatepickerSettings = None):
+        if settings is None:
+            settings = DatepickerSettings()
+
         self.settings = settings
 
         self.views = {
@@ -23,10 +26,10 @@ class Datepicker:
     def start_calendar(self):
         return self.views[self.settings.initial_view].get_markup(self.settings.initial_date)
 
-    def set_view(self, view: str, _data: date):
+    async def set_view(self, query: CallbackQuery, view: str, _data: date):
         if view not in ['day', 'month', 'year']:
             return False
-        return self.views[view].get_markup(_data)
+        return await query.message.edit_reply_markup(self.views[view].get_markup(_data))
 
     async def process(self, query: CallbackQuery, data: CallbackData) -> date:
         action = data['action']

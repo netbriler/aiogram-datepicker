@@ -11,12 +11,16 @@ from ..settings import DatepickerSettings
 
 class DayView(BaseView):
     def __init__(self, settings: DatepickerSettings, set_view):
-        super().__init__(settings)
+        super().__init__(settings, set_view)
+        self.custom_actions = []
+        for custom_action in settings.custom_actions:
+            self.custom_actions.append(custom_action(settings, set_view))
+
         self.settings = settings.views['day']
         self.labels = settings.labels
         self.set_view = set_view
 
-    def _get_action(self, view: str, action: str, year: int, month: int, day: int) -> str:
+    def _get_action(self, view: str, action: str, year: int, month: int, day: int) -> InlineKeyboardButton:
         if action in ['prev-year', 'next-year', 'prev-month', 'next-month', 'ignore']:
             return InlineKeyboardButton(self.labels[action],
                                         callback_data=self._get_callback(view, action, year, month, day))
@@ -32,14 +36,16 @@ class DayView(BaseView):
             return InlineKeyboardButton(self.labels[action],
                                         callback_data=self._get_callback(view, action, year, month, day))
 
+        for custom_action in self.custom_actions:
+            if custom_action.action == action:
+                return custom_action.get_action(view, year, month, day)
+
     def get_markup(self, _date: date = None) -> InlineKeyboardMarkup:
         year, month, day = _date.year, _date.month, _date.day
 
         markup = InlineKeyboardMarkup(row_width=7)
 
-        if len(self.settings['header']):
-            markup.add(
-                *[self._get_action('day', action, year, month, day) for action in self.settings['header']])
+        markup = self._insert_actions(markup, self.settings['header'], 'day', year, month, day)
 
         if self.settings['show_weekdays']:
             markup.row()
@@ -66,9 +72,7 @@ class DayView(BaseView):
                     label, callback_data=self._get_callback('day', 'set-day', year, month, week_day)
                 ))
 
-        if len(self.settings['footer']):
-            markup.add(
-                *[self._get_action('day', action, year, month, day) for action in self.settings['footer']])
+        markup = self._insert_actions(markup, self.settings['footer'], 'day', year, month, day)
 
         return markup
 
@@ -94,5 +98,10 @@ class DayView(BaseView):
         elif action == 'next-month':
             next_date = date(_date.year + int(_date.month == 12), ((_date.month % 12) + 1), _date.day)
             await query.message.edit_reply_markup(self.get_markup(next_date))
+
+        else:
+            for custom_action in self.custom_actions:
+                if custom_action.action == action:
+                    return await custom_action.process(query, 'day', _date)
 
         return False

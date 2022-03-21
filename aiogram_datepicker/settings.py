@@ -1,7 +1,7 @@
 from datetime import datetime, date
 from typing import Union, List, Dict
 
-from pydantic import BaseModel, validator
+from .custom_action import DatepickerCustomAction
 
 _available_views = ('day', 'month', 'year')
 
@@ -46,33 +46,47 @@ _default_labels = {
 }
 
 
-class DatepickerSettings(BaseModel):
-    initial_view: str = 'day'
-    initial_date: date = datetime.now().date()
+class DatepickerSettings:
+    def __init__(self, initial_date: date = datetime.now().date(), initial_view: str = 'day',
+                 views: Dict[str, Dict[str, Union[str, List[str], bool]]] = None, labels: Dict[str, str] = None,
+                 custom_actions: list[DatepickerCustomAction] = list()):
+        if labels is None:
+            labels = _default_labels
+        if views is None:
+            views = _default_views
 
-    views: Dict[str, Dict[str, Union[str, List[str], bool]]] = _default_views
-    labels: Dict[str, str] = _default_labels
+        self.available_actions = list(_default_labels.keys())
+        for custom_action in custom_actions:
+            self.available_actions.append(custom_action.action)
 
-    @validator('initial_view')
-    def initial_view_validator(cls, v):
+        self.custom_actions = custom_actions
+        self.initial_date = initial_date
+        self.initial_view = self.initial_view_validate(initial_view)
+        self.views = self.initial_views_validate(views)
+        self.labels = self.labels_validate(labels)
+
+    @staticmethod
+    def initial_view_validate(v):
         if v not in _available_views:
             raise ValueError(f'no view named {v}')
         return v
 
-    @validator('views')
-    def initial_views_validator(cls, v):
+    def initial_views_validate(self, v):
+        if not isinstance(v, dict):
+            raise ValueError(f'initial_views -> views should be dict')
+
         views = _default_views
         if 'day' in v:
-            if len(v['day']['weekdays_labels']) != 7:
-                raise ValueError(f'should be 7 weekdays labels {v}')
-
             views['day'].update(v['day'])
 
-        if 'month' in v:
-            if len(v['month']['months_labels']) != 12:
-                raise ValueError(f'should be 12 months labels {v}')
+            if len(views['day']['weekdays_labels']) != 7:
+                raise ValueError(f'day -> weekdays_labels -> should be 7 weekdays labels')
 
+        if 'month' in v:
             views['month'].update(v['month'])
+
+            if len(views['month']['months_labels']) != 12:
+                raise ValueError(f'month -> months_labels -> should be 12 months labels')
 
         if 'year' in v:
             views['year'].update(v['year'])
@@ -83,18 +97,34 @@ class DatepickerSettings(BaseModel):
             if isinstance(views[view]['footer'], str):
                 views[view]['header'] = views[view]['header'].split(',')
 
-            for action in views[view]['header']:
-                if action not in _default_labels.keys():
-                    raise ValueError(f'header -> no label named {v}')
+            header = []
+            for x in views[view]['header']:
+                if isinstance(x, list):
+                    for y in x:
+                        header.append(y)
+                else:
+                    header.append(x)
 
-            for action in views[view]['footer']:
-                if action not in _default_labels.keys():
-                    raise ValueError(f'footer -> no label named {v}')
+            footer = []
+            for x in views[view]['footer']:
+                if isinstance(x, list):
+                    for y in x:
+                        footer.append(y)
+                else:
+                    footer.append(x)
+
+            for action in header:
+                if action not in self.available_actions:
+                    raise ValueError(f'views -> {view} -> header -> no action named {action}')
+
+            for action in footer:
+                if action not in self.available_actions:
+                    raise ValueError(f'views -> {view} -> footer -> no action named {action}')
 
         return views
 
-    @validator('labels')
-    def labels_validator(cls, v):
+    @staticmethod
+    def labels_validate(v):
         labels = _default_labels
         labels.update(v)
 

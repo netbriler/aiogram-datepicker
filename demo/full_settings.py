@@ -1,13 +1,12 @@
 import logging
 import os
-import traceback
-from datetime import datetime
+from datetime import datetime, date
 
 from aiogram import Bot, Dispatcher
+from aiogram.types import InlineKeyboardButton
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils import executor
-
-from aiogram_datepicker import Datepicker, DatepickerSettings
+from aiogram_datepicker import Datepicker, DatepickerSettings, DatepickerCustomAction
 
 logging.basicConfig(level=logging.INFO)
 
@@ -15,29 +14,34 @@ bot = Bot(token=os.environ['API_TOKEN'])
 dp = Dispatcher(bot, run_tasks_by_default=True)
 
 
-@dp.errors_handler()
-async def errors_handler(update, exception):
-    try:
-        raise exception
-    except:
-        exception_traceback = traceback.format_exc()
-
-    logging.exception(f'Update: {update} \n{exception_traceback}')
-
-
 def _get_datepicker_settings():
+    class CancelAction(DatepickerCustomAction):
+        action: str = 'cancel'
+        label: str = 'Cancel'
+
+        available_views = ('day',)
+
+        def get_action(self, view: str, year: int, month: int, day: int) -> InlineKeyboardButton:
+            return InlineKeyboardButton(self.label,
+                                        callback_data=self._get_callback(view, self.action, year, month, day))
+
+        async def process(self, query: CallbackQuery, view: str, _date: date) -> bool:
+            if view == 'day':
+                await query.message.delete()
+                return False
+
     return DatepickerSettings(
         initial_view='day',
         initial_date=datetime.now().date(),
         views={
             'day': {
-                'show_weekdays': True,
-                'weekdays_labels': ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+                'show_weekdays': False,
+                'weekdays_labels': ['Mo', 'Tus', 'We', 'Th', 'Fr', 'Sa', 'Su'],
                 'header': ['prev-year', 'days-title', 'next-year'],
-                'footer': ['prev-month', 'select', 'next-month'],
+                'footer': ['prev-month', 'select', 'next-month', ['cancel']],
             },
             'month': {
-                'months_labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                'months_labels': ['Jan', 'Feb❤', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                 'header': ['prev-year', 'year', 'next-year'],
                 'footer': ['select']
             },
@@ -59,7 +63,8 @@ def _get_datepicker_settings():
             'select': 'Select',
             'next-month': '>',
             'ignore': ''
-        }
+        },
+        custom_actions=[CancelAction]
     )
 
 
@@ -75,9 +80,9 @@ async def _main(message: Message):
 async def _process_datepicker(callback_query: CallbackQuery, callback_data: dict):
     datepicker = Datepicker(_get_datepicker_settings())
 
-    date = await datepicker.process(callback_query, callback_data)
-    if date:
-        await callback_query.message.answer(date.strftime('%d/%m/%Y'))
+    _date = await datepicker.process(callback_query, callback_data)
+    if _date:
+        await callback_query.message.answer(_date.strftime('%d/%m/%Y'))
 
     await callback_query.answer()
 

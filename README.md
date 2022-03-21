@@ -92,6 +92,40 @@ DatepickerSettings(
         'select': 'Select',
         'next-month': '>',
         'ignore': ''
-    }
+    },
+    custom_actions=[] #some custom actions
+
+)
+```
+
+## Custom action example
+```python
+from aiogram_datepicker import Datepicker, DatepickerSettings, DatepickerCustomAction
+
+class TodayAction(DatepickerCustomAction):
+    action: str = 'today'
+    label: str = 'Today'
+
+    available_views = ('day',)
+
+    def get_action(self, view: str, year: int, month: int, day: int) -> InlineKeyboardButton:
+        return InlineKeyboardButton(self.label,
+                                    callback_data=self._get_callback(view, self.action, year, month, day))
+
+    async def process(self, query: CallbackQuery, view: str, _date: date) -> bool:
+        if view == 'day':
+            await self.set_view(query, 'day', datetime.now().date())
+            return False
+
+settings = DatepickerSettings(
+    views={
+        'day': {
+            'footer': ['prev-month', 'today', 'next-month', ['select']],
+        },
+        'year': {
+            'header': ['today'],
+        }
+    },
+    custom_actions=[TodayAction, CancelAction]
 )
 ```
