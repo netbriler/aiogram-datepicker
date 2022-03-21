@@ -6,7 +6,7 @@ with open('README.md', 'r') as fh:
 setuptools.setup(
     name='aiogram_datepicker',
     packages=setuptools.find_packages(),
-    version='0.0.5',
+    version='0.0.6',
     license='MIT',
     description='Telegram Bots datepicker & Aiogram datepicker',
     author='Briler',

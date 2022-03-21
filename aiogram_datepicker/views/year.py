@@ -35,6 +35,7 @@ class YearView(BaseView):
 
         markup = self._insert_actions(markup, self.settings['header'], 'year', year, month, day)
 
+        markup.row()
         for value in range(year - offset, year + offset + 1):
             markup.insert(InlineKeyboardButton(
                 f'{value}*' if year == value else str(value),

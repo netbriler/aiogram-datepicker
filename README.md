@@ -116,16 +116,25 @@ class TodayAction(DatepickerCustomAction):
         if view == 'day':
             await self.set_view(query, 'day', datetime.now().date())
             return False
+        elif view == 'month':
+            await self.set_view(query, 'month', date(_date.year, datetime.now().date().month, _date.day))
+            return False
+        elif view == 'year':
+            await self.set_view(query, 'month', date(datetime.now().date().year, _date.month, _date.day))
+            return False
 
 settings = DatepickerSettings(
     views={
         'day': {
-            'footer': ['prev-month', 'today', 'next-month', ['select']],
+            'footer': ['prev-month', 'today', 'next-month', ['select'], ['cancel']],
+        },
+        'month': {
+            'footer': ['select', 'today']
         },
         'year': {
             'header': ['today'],
         }
     },
-    custom_actions=[TodayAction, CancelAction]
+    custom_actions=[TodayAction]
 )
 ```
