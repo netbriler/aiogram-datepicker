@@ -2,6 +2,7 @@ from datetime import datetime, date
 from typing import Union, List, Dict
 
 from .custom_action import DatepickerCustomAction
+from .helpers import merge_list
 
 _available_views = ('day', 'month', 'year')
 
@@ -97,27 +98,11 @@ class DatepickerSettings:
             if isinstance(views[view]['footer'], str):
                 views[view]['header'] = views[view]['header'].split(',')
 
-            header = []
-            for x in views[view]['header']:
-                if isinstance(x, list):
-                    for y in x:
-                        header.append(y)
-                else:
-                    header.append(x)
-
-            footer = []
-            for x in views[view]['footer']:
-                if isinstance(x, list):
-                    for y in x:
-                        footer.append(y)
-                else:
-                    footer.append(x)
-
-            for action in header:
+            for action in merge_list(views[view]['header']):
                 if action not in self.available_actions:
                     raise ValueError(f'views -> {view} -> header -> no action named {action}')
 
-            for action in footer:
+            for action in merge_list(views[view]['footer']):
                 if action not in self.available_actions:
                     raise ValueError(f'views -> {view} -> footer -> no action named {action}')
 

@@ -14,8 +14,6 @@ class DatepickerCustomAction(ABC):
     action: str
     label: str
 
-    available_views = ('day', 'month', 'year')
-
     def __init__(self, settings, set_view):
         super().__init__()
         self.settings = settings

@@ -4,6 +4,7 @@ import os
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils import executor
+
 from aiogram_datepicker import Datepicker, DatepickerSettings
 
 logging.basicConfig(level=logging.INFO)
@@ -17,6 +18,7 @@ async def _main(message: Message):
     datepicker = Datepicker(DatepickerSettings())
 
     markup = datepicker.start_calendar()
+
     await message.answer('Select a date: ', reply_markup=markup)
 
 

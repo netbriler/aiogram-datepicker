@@ -20,8 +20,6 @@ def _get_datepicker_settings():
         action: str = 'today'
         label: str = 'Today'
 
-        available_views = ('day',)
-
         def get_action(self, view: str, year: int, month: int, day: int) -> InlineKeyboardButton:
             return InlineKeyboardButton(self.label,
                                         callback_data=self._get_callback(view, self.action, year, month, day))
@@ -41,8 +39,6 @@ def _get_datepicker_settings():
         action: str = 'cancel'
         label: str = 'Cancel'
 
-        available_views = ('day', 'year')
-
         def get_action(self, view: str, year: int, month: int, day: int) -> InlineKeyboardButton:
             return InlineKeyboardButton(self.label,
                                         callback_data=self._get_callback(view, self.action, year, month, day))
@@ -53,12 +49,13 @@ def _get_datepicker_settings():
                 return False
 
     return DatepickerSettings(
+        initial_view='month',
         views={
             'day': {
-                'footer': ['prev-month', 'today', 'next-month', ['select'], ['cancel']],
+                'footer': ['prev-month', 'today', 'next-month', ['cancel']],
             },
             'month': {
-                'footer': ['select', 'today']
+                'footer': ['today']
             },
             'year': {
                 'header': ['today'],

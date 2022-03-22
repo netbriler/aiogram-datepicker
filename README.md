@@ -2,7 +2,9 @@
 
 ## Demo:
 
-![aiogram-datepicker](https://i.imgur.com/15hSnwZ.gif)
+![aiogram-datepicker-simple](https://i.imgur.com/zU1kM9q.gif)
+
+![aiogram-datepicker-settings](https://i.imgur.com/7Vxfg0R.gif)
 
 ## Installing
 
@@ -64,12 +66,16 @@ DatepickerSettings(
             'show_weekdays': True,
             'weekdays_labels': ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
             'header': ['prev-year', 'days-title', 'next-year'],
-            'footer': ['prev-month', 'select', 'next-month'],
+            'footer': ['prev-month', 'select', 'next-month'], #if you don't need select action, you can remove it and the date will return automatically without waiting for the button select
             #available actions -> prev-year, days-title, next-year, prev-month, select, next-month, ignore
         },
         'month': {
             'months_labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            'header': ['prev-year', 'year', 'next-year'],
+            'header': [
+                        'prev-year', 
+                        ['year', 'select'], #you can separate buttons into groups
+                        'next-year'
+                       ], 
             'footer': ['select'],
             #available actions -> prev-year, year, next-year, select, ignore
         },
@@ -106,13 +112,17 @@ class TodayAction(DatepickerCustomAction):
     action: str = 'today'
     label: str = 'Today'
 
-    available_views = ('day',)
-
     def get_action(self, view: str, year: int, month: int, day: int) -> InlineKeyboardButton:
+        """
+        Required function
+        """
         return InlineKeyboardButton(self.label,
                                     callback_data=self._get_callback(view, self.action, year, month, day))
 
     async def process(self, query: CallbackQuery, view: str, _date: date) -> bool:
+        """
+        Required function
+        """
         if view == 'day':
             await self.set_view(query, 'day', datetime.now().date())
             return False
@@ -126,10 +136,10 @@ class TodayAction(DatepickerCustomAction):
 settings = DatepickerSettings(
     views={
         'day': {
-            'footer': ['prev-month', 'today', 'next-month', ['select'], ['cancel']],
+            'footer': ['prev-month', 'today', 'next-month', ['cancel']],
         },
         'month': {
-            'footer': ['select', 'today']
+            'footer': ['today']
         },
         'year': {
             'header': ['today'],

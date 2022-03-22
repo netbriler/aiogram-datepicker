@@ -5,6 +5,7 @@ from aiogram.types import CallbackQuery
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from .base import BaseView
+from ..helpers import merge_list
 from ..settings import DatepickerSettings
 
 
@@ -60,7 +61,11 @@ class MonthView(BaseView):
             await query.message.edit_reply_markup(self.get_markup(_date))
 
         elif action == 'set-month':
-            await query.message.edit_reply_markup(self.get_markup(_date))
+            if 'select' not in merge_list(self.settings['header']) \
+                    and 'select' not in merge_list(self.settings['footer']):
+                await self.set_view(query, 'day', _date)
+            else:
+                await query.message.edit_reply_markup(self.get_markup(_date))
 
         elif action == 'prev-year':
             prev_date = date(_date.year - 1, _date.month, _date.day)

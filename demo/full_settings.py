@@ -19,8 +19,6 @@ def _get_datepicker_settings():
         action: str = 'cancel'
         label: str = 'Cancel'
 
-        available_views = ('day',)
-
         def get_action(self, view: str, year: int, month: int, day: int) -> InlineKeyboardButton:
             return InlineKeyboardButton(self.label,
                                         callback_data=self._get_callback(view, self.action, year, month, day))
@@ -31,19 +29,19 @@ def _get_datepicker_settings():
                 return False
 
     return DatepickerSettings(
-        initial_view='day',
+        initial_view='month',
         initial_date=datetime.now().date(),
         views={
             'day': {
                 'show_weekdays': False,
                 'weekdays_labels': ['Mo', 'Tus', 'We', 'Th', 'Fr', 'Sa', 'Su'],
                 'header': ['prev-year', 'days-title', 'next-year'],
-                'footer': ['prev-month', 'select', 'next-month', ['cancel']],
+                'footer': ['prev-month', 'ignore', 'next-month', ['cancel']],
             },
             'month': {
                 'months_labels': ['Jan', 'Feb❤', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                 'header': ['prev-year', 'year', 'next-year'],
-                'footer': ['select']
+                'footer': []
             },
             'year': {
                 'header': [],
@@ -62,7 +60,7 @@ def _get_datepicker_settings():
             'prev-month': '<',
             'select': 'Select',
             'next-month': '>',
-            'ignore': ''
+            'ignore': '⠀'
         },
         custom_actions=[CancelAction]
     )
