@@ -1,14 +1,14 @@
 # Aiogram datepicker widget
 
+## Installing
+
+    pip install aiogram-datepicker --upgrade
+
 ## Demo:
 
 ![aiogram-datepicker-simple](https://i.imgur.com/zU1kM9q.gif)
 
 ![aiogram-datepicker-settings](https://i.imgur.com/7Vxfg0R.gif)
-
-## Installing
-
-    pip install aiogram-datepicker
 
 ## Simple usage
 ```python
