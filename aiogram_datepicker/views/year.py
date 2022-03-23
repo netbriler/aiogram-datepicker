@@ -5,6 +5,7 @@ from aiogram.types import CallbackQuery
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from .base import BaseView
+from ..helpers import merge_list
 from ..settings import DatepickerSettings
 
 
@@ -18,6 +19,8 @@ class YearView(BaseView):
         self.settings = settings.views['year']
         self.labels = settings.labels
         self.set_view = set_view
+        self.select_disabled = 'select' not in merge_list(self.settings['header']) \
+                               and 'select' not in merge_list(self.settings['footer'])
 
     def _get_action(self, view: str, action: str, year: int, month: int, day: int) -> InlineKeyboardButton:
         if action in ['prev-years', 'next-years', 'ignore']:

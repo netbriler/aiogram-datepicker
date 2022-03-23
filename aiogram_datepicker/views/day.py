@@ -20,6 +20,8 @@ class DayView(BaseView):
         self.settings = settings.views['day']
         self.labels = settings.labels
         self.set_view = set_view
+        self.select_disabled = 'select' not in merge_list(self.settings['header']) \
+                               and 'select' not in merge_list(self.settings['footer'])
 
     def _get_action(self, view: str, action: str, year: int, month: int, day: int) -> InlineKeyboardButton:
         if action in ['prev-year', 'next-year', 'prev-month', 'next-month', 'ignore']:
@@ -64,7 +66,7 @@ class DayView(BaseView):
                     continue
 
                 label = f'{week_day}'
-                if date(year, month, week_day) == _date:
+                if date(year, month, week_day) == _date and not self.select_disabled:
                     label = f'{week_day} *'
                 elif date(year, month, week_day) == datetime.now().date():
                     label = f'• {week_day} •'
@@ -82,10 +84,9 @@ class DayView(BaseView):
             return _date
 
         elif action == 'set-day':
-            await query.message.edit_reply_markup(self.get_markup(_date))
-            if 'select' not in merge_list(self.settings['header']) \
-                    and 'select' not in merge_list(self.settings['footer']):
+            if self.select_disabled:
                 return _date
+            await query.message.edit_reply_markup(self.get_markup(_date))
 
         elif action == 'prev-year':
             prev_date = date(_date.year - 1, _date.month, _date.day)

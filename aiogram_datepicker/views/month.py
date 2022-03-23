@@ -20,6 +20,8 @@ class MonthView(BaseView):
         self.labels = settings.labels
         self.set_view = set_view
         self.months = settings.views['month']['months_labels']
+        self.select_disabled = 'select' not in merge_list(self.settings['header']) \
+                               and 'select' not in merge_list(self.settings['footer'])
 
     def _get_action(self, view: str, action: str, year: int, month: int, day: int) -> InlineKeyboardButton:
         if action in ['prev-year', 'next-year', 'ignore']:
@@ -48,7 +50,7 @@ class MonthView(BaseView):
         markup.row()
         for i, month_title in enumerate(self.months, start=1):
             markup.insert(InlineKeyboardButton(
-                f'{month_title}*' if i == month else month_title,
+                f'{month_title}*' if i == month and not self.select_disabled else month_title,
                 callback_data=self._get_callback('month', 'set-month', year, i, day)
             ))
 
@@ -61,8 +63,7 @@ class MonthView(BaseView):
             await query.message.edit_reply_markup(self.get_markup(_date))
 
         elif action == 'set-month':
-            if 'select' not in merge_list(self.settings['header']) \
-                    and 'select' not in merge_list(self.settings['footer']):
+            if self.select_disabled:
                 await self.set_view(query, 'day', _date)
             else:
                 await query.message.edit_reply_markup(self.get_markup(_date))
